@@ -10,14 +10,6 @@ from readligo.preprocessing import (
     process_band,
 )
 from readligo.process_run import process_ligo_files, save_hdf5_file
-from readligo.projection import (
-    ProjectionResult,
-    compute_effective_window,
-    compute_noise_covariance,
-    compute_response_matrix,
-    project_band,
-    project_polarizations,
-)
 
 __all__ = [
     "loaddata",
@@ -30,10 +22,4 @@ __all__ = [
     "process_band",
     "process_ligo_files",
     "save_hdf5_file",
-    "ProjectionResult",
-    "compute_effective_window",
-    "compute_noise_covariance",
-    "compute_response_matrix",
-    "project_band",
-    "project_polarizations",
 ]
