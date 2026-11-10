@@ -112,7 +112,7 @@ may be deleted, so copy anything you want to keep:
   no samples above 30σ² remain marked good in the default band.
 - **Script:** `critic/c5_default_band.py`
 
-### [ ] C5 🟠 Nearly-empty files are marked all-good, or crash the batch run
+### [x] C5 🟠 Nearly-empty files are marked all-good, or crash the batch run
 - **Where:** `preprocessing.py:203-205`
   (`if n_good < 2: return data.copy(), np.ones(n, dtype=bool), {}`)
 - **Problem:**
@@ -125,6 +125,16 @@ may be deleted, so copy anything you want to keep:
   every expected key.
 - **Done when:** both files process at B = 0.1 without error and produce
   masks with no DQ-bad samples marked good.
+- **Resolved 2026-11-11:**
+  - When fewer than 2 DQ-good columns exist, the series is zeroed and fully
+    masked, and `diag` now has every key (`sxx_scaled` is NaN because no
+    noise estimate is possible).
+  - `plot_cleaning` handles that NaN case.
+  - Both files now process at 0.1 and 0.2 Hz with 0 samples marked good and
+    no crash.
+  - A normal file's output is bit-identical to before the fix.
+  - A lone DQ-good column (n_good = 1) is reported as artifact loss in
+    `data_loss_stats`.
 
 ### [ ] C6 🟠 Each 4096 s file is processed on its own, leaving start spikes
 - **Where:** `process_run.py` loop and `process_band`

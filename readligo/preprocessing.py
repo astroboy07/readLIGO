@@ -200,16 +200,34 @@ def clean_narrowband(
     # the noise estimate.
     n_good = int(np.sum(good_cols))
     n = len(data)
+
+    # Chi-squared threshold (|Z|^2 / noise ~ chi2(2) under H0)
+    threshold = stats.chi2.isf(fap, df=2)
+
     if n_good < 2:
-        logger.warning("Fewer than 2 good DQ columns — skipping cleaning")
-        return data.copy(), np.ones(n, dtype=bool), {}
+        # Too few DQ-good columns to estimate the noise floor, so nothing can
+        # be tested: mask the whole series rather than pass it through as good.
+        # A lone DQ-good column is reported as artifact loss by data_loss_stats.
+        logger.warning(
+            "Only %d DQ-good STFT column(s) — cannot estimate noise; masking all samples",
+            n_good,
+        )
+        diag = {
+            "freq": freq,
+            "time_bins": time_bins,
+            "sxx": sxx,
+            "sxx_scaled": np.full(sxx.shape, np.nan),
+            "good_cols": good_cols,
+            "bad_col_mask": np.ones(len(good_cols), dtype=bool),
+            "col_hits": np.zeros(len(good_cols), dtype=int),
+            "threshold": threshold,
+            "fs_new": fs_new,
+        }
+        return np.zeros_like(data), np.zeros(n, dtype=bool), diag
 
     q = np.quantile(sxx[:, good_cols], 0.394, axis=1, keepdims=True)
     q = np.where(q > 0, q, 1.0)
     sxx_scaled = sxx / q
-
-    # Chi-squared threshold (|Z|^2 / noise ~ chi2(2) under H0)
-    threshold = stats.chi2.isf(fap, df=2)
 
     # Column-sum test: flag columns with broadband excess power
     hits = sxx_scaled > threshold
@@ -472,9 +490,10 @@ def plot_cleaning(
 
     # Compute color limits from good columns only
     sxx_scaled_db = 10 * np.log10(sxx_scaled + 1e-30)
-    if np.any(good_cols):
-        vmin, vmax = np.percentile(sxx_scaled_db[:, good_cols], [2, 98])
-    else:
+    good_db = sxx_scaled_db[:, good_cols]
+    if good_db.size and np.all(np.isfinite(good_db)):
+        vmin, vmax = np.percentile(good_db, [2, 98])
+    else:  # no good columns, or cleaning was skipped (sxx_scaled is NaN)
         vmin = vmax = None
 
     # 1) Normalised power spectrogram
