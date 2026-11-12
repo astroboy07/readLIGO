@@ -403,10 +403,15 @@ may be deleted, so copy anything you want to keep:
 - **Fix:** add regression tests for C1, C3, C5, O1 and the hardware
   injections.
 
-### [ ] E5 🟡 No NaN / finite guard
+### [x] E5 🟡 No NaN / finite guard
 - **Problem:** NaNs currently all fall in DATA = 0 seconds, but nothing
   enforces this.
 - **Fix:** assert `np.isfinite` on all samples that the mask marks good.
+- **Resolved 2026-11-13:** `apply_dq_mask` raises `ValueError` (with the
+  count and first offending second) if any DQ-good sample is non-finite.
+  Without it, one NaN in a good second made the whole file 100 % "good"
+  and passed 96 NaN samples downstream. All 56 raw files pass the check,
+  and output on a normal file is bit-identical to before.
 
 ### [ ] E6 ⚪ `data_loss_stats` hard-codes 4096 and ignores `bound`
 - **Where:** `preprocessing.py:357` (`np.repeat(dq_mask_1hz, 4096)`), and
