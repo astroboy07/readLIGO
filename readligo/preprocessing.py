@@ -45,11 +45,26 @@ def apply_dq_mask(
         Copy of *strain* with bad samples set to zero.
     dq_mask_1hz
         Boolean array at 1 Hz (``True`` = good data).
+
+    Raises
+    ------
+    ValueError
+        If a DQ-good second contains a non-finite sample. GWOSC stores gaps
+        as NaN only in ``DATA = 0`` seconds; a NaN that survives masking
+        would spread through the decimation filter and disable the cleaner.
     """
     dq_mask_1hz = (channel_dict["DATA"] == 1) & (channel_dict["CBC_CAT1"] == 1)
     dq_mask_fs = np.repeat(dq_mask_1hz, fs)
     clean_strain = np.copy(strain)
     clean_strain[~dq_mask_fs] = 0.0
+
+    nonfinite = ~np.isfinite(clean_strain)
+    if nonfinite.any():
+        bad_secs = np.unique(np.flatnonzero(nonfinite) // fs)
+        raise ValueError(
+            f"{nonfinite.sum()} non-finite sample(s) in {len(bad_secs)} DQ-good "
+            f"second(s), first at second {bad_secs[0]} of the file"
+        )
     return clean_strain, dq_mask_1hz
 
 
