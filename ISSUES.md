@@ -226,7 +226,7 @@ may be deleted, so copy anything you want to keep:
   - The batch run checks every output path before processing anything.
   - Tested in a scratch directory.
 
-### [ ] O2 🟠 Output carries almost no metadata
+### [x] O2 🟠 Output carries almost no metadata
 - **Problem:** the only attrs written are `source_file`, `f_band` and
   `fs_new`. Missing:
   - IFO
@@ -238,6 +238,20 @@ may be deleted, so copy anything you want to keep:
 - **Fix:** write all of these as HDF5 attrs.
 - **Done when:** every product can be regenerated exactly from its own
   attrs.
+- **Resolved 2026-11-13:** `process_ligo_files` now writes, as root attrs:
+  - source: `detector` (must be H1 or L1), `source_gps_start`,
+    `source_duration`, `strain_channel`;
+  - processing (`processing_attrs`): `dq_flags`, `fs_in`, `f_h`,
+    `heterodyne_epoch`, `heterodyne_convention`, `decimation_factors`,
+    `decimation_ftype`, `nperseg`, `noverlap`, `stft_window`,
+    `noise_quantile`, `fap`, `bound`;
+  - provenance: `readligo_git_commit`, `readligo_git_dirty`, Python, numpy,
+    scipy and h5py versions, `created_utc`.
+
+  The fixed choices (DQ flags, window, quantile, filter type) are now
+  module constants in `preprocessing.py`, used by both the code and the
+  record. Output data are bit-identical to before. Noise level is left to
+  O4. Products made before this fix (V1) still have no record.
 
 ### [ ] O3 🟠 Output conventions don't match pyloki and rustyprune
 

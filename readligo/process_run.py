@@ -1,10 +1,19 @@
+import subprocess
+import sys
+from collections.abc import Mapping
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
 import h5py
 import numpy as np
-from pathlib import Path
+import scipy
 from rich.progress import track
-from .io import loaddata
-from .preprocessing import process_band
+from .io import loaddata, read_meta
+from .preprocessing import process_band, processing_attrs
 
+
+DETECTORS = ("H1", "L1")
 
 DATA_DIRNAME = "/Users/saifa/Library/CloudStorage/OneDrive-weizmann.ac.il/O3a_marvin/"
 OUT_DIRNAME = "/Users/saifa/Library/CloudStorage/OneDrive-weizmann.ac.il/O3a_marvin_processed"
@@ -28,6 +37,48 @@ def output_path(
     return Path(out_dir) / f"{Path(source_filename).stem}_f_band_{band}Hz.hdf5"
 
 
+def _git(*args: str) -> str | None:
+    """Run git in the package directory; None if git or the repo is unavailable."""
+    try:
+        out = subprocess.run(
+            ["git", "-C", str(Path(__file__).resolve().parent), *args],
+            capture_output=True, text=True, check=True, timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return out.stdout.strip()
+
+
+def provenance_attrs() -> dict[str, str | bool]:
+    """Code and library versions, for reproducing a product later."""
+    commit = _git("rev-parse", "HEAD")
+    status = _git("status", "--porcelain", "--", ".")
+    return {
+        "readligo_git_commit": commit or "unknown",
+        # True if readligo/ had uncommitted changes when the file was made.
+        "readligo_git_dirty": bool(status) if status is not None else True,
+        "python_version": sys.version.split()[0],
+        "numpy_version": np.__version__,
+        "scipy_version": scipy.__version__,
+        "h5py_version": h5py.__version__,
+        "created_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    }
+
+
+def source_attrs(source_path: str | Path) -> dict[str, str | int]:
+    """Detector and provenance of the raw GWOSC file, from its ``meta`` group."""
+    meta = read_meta(source_path)
+    detector = meta["Detector"]
+    if detector not in DETECTORS:
+        raise ValueError(f"{source_path}: detector {detector!r} is not one of {DETECTORS}")
+    return {
+        "detector": detector,
+        "source_gps_start": meta["GPSstart"],
+        "source_duration": meta["Duration"],
+        "strain_channel": meta["StrainChannel"],
+    }
+
+
 def save_hdf5_file(
     out_dir: str | Path,
     source_filename: str,
@@ -38,8 +89,15 @@ def save_hdf5_file(
     fs_new: float,
     breakdown: dict[str, int | float] | None,
     *,
+    attrs: Mapping[str, Any] | None = None,
     overwrite: bool = False,
 ) -> None:
+    """Write one processed band to HDF5.
+
+    *attrs* (e.g. from :func:`source_attrs`, :func:`processing_attrs` and
+    :func:`provenance_attrs`) are written as root attributes alongside
+    ``source_file``, ``f_band`` and ``fs_new``.
+    """
     out_path = output_path(out_dir, source_filename, f_band)
     if out_path.exists() and not overwrite:
         raise FileExistsError(
@@ -52,6 +110,8 @@ def save_hdf5_file(
         f.attrs["source_file"]  = source_filename
         f.attrs["f_band"]       = list(f_band)   # [f_min, f_max] Hz
         f.attrs["fs_new"]       = fs_new
+        for key, val in (attrs or {}).items():
+            f.attrs[key] = val
 
         # ── breakdown stats ────────────────────────────────────────
         if breakdown is not None:
@@ -92,15 +152,23 @@ def process_ligo_files(
                 f"{len(existing)} output file(s) already exist for band {f_band}, "
                 f"e.g. {existing[0]}; pass overwrite=True to replace them."
             )
+    fs = 4096  # GWOSC 4 kHz release
+    run_attrs = provenance_attrs()
     for files in track(hdf5_files_sorted, description="Processing files"):
         strain, time, channel_dict = loaddata(data_dirname + files.name)
         assert isinstance(time, np.ndarray), "expected time vector"
         gpsStart = time[0]
+        attrs = {
+            **source_attrs(data_dirname + files.name),
+            **processing_attrs(gpsStart, f_band, fs=fs, nperseg=nperseg, fap=fap, bound=bound),
+            **run_attrs,
+        }
         gps_times, cleaned, sample_mask, fs_new, breakdown = process_band(
             strain,
             channel_dict,
             gpsStart,
             f_band,
+            fs=fs,
             fap=fap,
             nperseg=nperseg,
             bound=bound,
@@ -116,5 +184,6 @@ def process_ligo_files(
             sample_mask,
             fs_new,
             breakdown,
+            attrs=attrs,
             overwrite=overwrite,
         )
