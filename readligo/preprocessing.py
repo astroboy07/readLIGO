@@ -118,6 +118,16 @@ def heterodyne_downsample(
         x_dec = signal.decimate(x_dec, remaining, ftype="fir")
         current_fs /= remaining
 
+    # A complex series at current_fs holds only +-current_fs/2, so anything
+    # below the bandwidth folds the band edges onto each other. The relative
+    # tolerance absorbs float error in f_max - f_min (e.g. 20.1 - 20.0 > 0.1).
+    if current_fs < bandwidth * (1 - 1e-9):
+        raise ValueError(
+            f"Output sample rate {current_fs:g} Hz is below the bandwidth "
+            f"{bandwidth:g} Hz for band {f_band}; the band would alias. "
+            "Choose a bandwidth that divides the decimation chain evenly."
+        )
+
     return x_dec, current_fs
 
 

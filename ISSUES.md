@@ -84,14 +84,34 @@ may be deleted, so copy anything you want to keep:
 - **Problem:**
   - B = 0.6 gives fs = 0.5 Hz, and B = 0.9 gives fs = 0.889 Hz. Both are
     below B, so the band aliases.
-  - B = 0.4 gives fs = 1/3 Hz for about 80% of fmin values on the 1/1800 Hz
-    grid. The cause is float round-off combined with numpy's
-    round-half-to-even.
+  - B = 0.4 gives fs = 1/3 Hz for 35–61% of fmin values on the 1/1800 Hz
+    grid, depending on the fmin range (0.5 Hz otherwise). The final factor
+    is round(1 Hz / B) = round(2.5): float error in `f_max - f_min` tips it
+    to 3, and numpy's round-half-to-even sends an exact 2.5 to 2.
   - No B ever produces fs = 2B.
+  - Sweep of B = 0.1–1.0 Hz in 0.05 steps, fmin = 20–500 Hz:
+
+    | Result | B (Hz) |
+    |---|---|
+    | fs_out = B exactly | 0.1, 0.2, 0.25, 0.5, 0.8, 1.0 |
+    | fs_out > B (safe, not exact) | 0.3, 0.45, 0.65, 0.7, 0.85, 0.95 |
+    | fs_out < B (aliases) | 0.15, 0.35, 0.55, 0.6, 0.75, 0.9 (always); 0.4 (60% of fmin) |
+
+- **Requirement:** for **any** user-requested B in 0.1–1 Hz (most bands
+  will be 0.1–0.5 Hz), the output covers exactly [f_min, f_max], with no
+  rounding of B and no dependence on fmin. This needs C2 (output at 2B, so
+  the band is flat to its edges) as well as an exact fs.
 - **Fix:** choose the decimation factors from an explicit target fs and
-  assert `fs_out >= 2B` (the quick fix is `assert fs_out >= B`).
-- **Done when:** for every B in {0.1, 0.2, …, 1.0} and a sweep of fmin
-  values, fs_out equals the target exactly.
+  assert `fs_out >= 2B` (the quick fix is `assert fs_out >= B`). For B where
+  4096 / 2B is not an integer (e.g. 0.15, 0.35), use rational resampling
+  (`scipy.signal.resample_poly`) rather than rounding the factor.
+- **Done when:** for a sweep of B over 0.1–1 Hz (including non-round values
+  such as 0.15, 0.37, 0.55) and fmin over 20–2000 Hz, fs_out equals the
+  target exactly and a swept tone has flat gain from f_min to f_max.
+- **Quick fix done 2026-11-13:** `heterodyne_downsample` raises `ValueError`
+  if `fs_out < B` (relative tolerance 1e-9, since e.g. 20.1 − 20.0 is
+  slightly above 0.1). B = 0.6, 0.9 and some B = 0.4 bands now stop with an
+  error instead of aliasing. The target-fs redesign is still open.
 
 ### [ ] C4 🟠 Glitch cleaner fails at 0.1 Hz bandwidth
 - **Where:** `preprocessing.py:138-270` (`clean_narrowband`, `nperseg=64`)
