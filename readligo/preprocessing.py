@@ -19,7 +19,17 @@ __all__ = [
     "heterodyne_downsample",
     "plot_cleaning",
     "process_band",
+    "processing_attrs",
 ]
+
+# Fixed processing choices. They are recorded in every output file by
+# processing_attrs(), so change them here rather than inline.
+DQ_FLAGS: tuple[str, ...] = ("DATA", "CBC_CAT1")  # all must be 1 for a good second
+DECIMATION_FTYPE = "fir"  # scipy.signal.decimate filter type
+STFT_WINDOW = "hann"
+# Dividing |Z|^2 by this quantile makes it chi2(2) in Gaussian noise
+# (the chi2(2) CDF at 1 is 1 - exp(-1/2) = 0.3935).
+NOISE_QUANTILE = 0.394
 
 
 # Data quality masking
@@ -53,7 +63,7 @@ def apply_dq_mask(
         as NaN only in ``DATA = 0`` seconds; a NaN that survives masking
         would spread through the decimation filter and disable the cleaner.
     """
-    dq_mask_1hz = (channel_dict["DATA"] == 1) & (channel_dict["CBC_CAT1"] == 1)
+    dq_mask_1hz = np.logical_and.reduce([channel_dict[k] == 1 for k in DQ_FLAGS])
     dq_mask_fs = np.repeat(dq_mask_1hz, fs)
     clean_strain = np.copy(strain)
     clean_strain[~dq_mask_fs] = 0.0
@@ -104,19 +114,13 @@ def heterodyne_downsample(
     t = np.arange(len(data)) / fs
     x_h = data * np.exp(-2j * np.pi * f_h * t)
 
-    # Multi-stage decimate (each stage <= 13 per scipy recommendation).
-    # Use FIR filter (ftype="fir") because it is guaranteed to handle
-    # complex-valued input correctly.
+    # Multi-stage decimate. Use FIR filters because they are guaranteed to
+    # handle complex-valued input correctly.
     x_dec = x_h
     current_fs = float(fs)
-    while current_fs / bandwidth > 13:
-        x_dec = signal.decimate(x_dec, 8, ftype="fir")
-        current_fs /= 8
-
-    remaining = int(np.round(current_fs / bandwidth))
-    if remaining > 1:
-        x_dec = signal.decimate(x_dec, remaining, ftype="fir")
-        current_fs /= remaining
+    for q in decimation_factors(fs, bandwidth):
+        x_dec = signal.decimate(x_dec, q, ftype=DECIMATION_FTYPE)
+        current_fs /= q
 
     # A complex series at current_fs holds only +-current_fs/2, so anything
     # below the bandwidth folds the band edges onto each other. The relative
@@ -129,6 +133,58 @@ def heterodyne_downsample(
         )
 
     return x_dec, current_fs
+
+
+def decimation_factors(fs: float, bandwidth: float) -> list[int]:
+    """Integer decimation factors that :func:`heterodyne_downsample` applies.
+
+    Stages of 8 while the rate is more than 13x the bandwidth (scipy's
+    recommended maximum per stage), then one rounded factor towards the
+    bandwidth. See ISSUES.md C3: the rounding makes this inexact for some B.
+    """
+    factors: list[int] = []
+    current_fs = float(fs)
+    while current_fs / bandwidth > 13:
+        factors.append(8)
+        current_fs /= 8
+    remaining = int(np.round(current_fs / bandwidth))
+    if remaining > 1:
+        factors.append(remaining)
+    return factors
+
+
+def processing_attrs(
+    gps_start: float,
+    f_band: tuple[float, float],
+    *,
+    fs: int = 4096,
+    nperseg: int = 64,
+    fap: float = 0.001,
+    bound: int = 10,
+) -> dict[str, str | int | float | list[int] | list[float] | list[str]]:
+    """Every setting :func:`process_band` uses, as flat HDF5-ready attrs.
+
+    Takes the same arguments as :func:`process_band`, so the record cannot
+    drift from what was run.
+    """
+    f_min, f_max = f_band
+    factors = decimation_factors(fs, f_max - f_min)
+    return {
+        "dq_flags": list(DQ_FLAGS),
+        "fs_in": fs,
+        "f_h": (f_min + f_max) / 2.0,
+        # process_band heterodynes with t = 0 at the first sample (C7).
+        "heterodyne_epoch": float(gps_start),
+        "heterodyne_convention": "x(t) * exp(-2j*pi*f_h*(t - heterodyne_epoch))",
+        "decimation_factors": factors,
+        "decimation_ftype": DECIMATION_FTYPE,
+        "nperseg": nperseg,
+        "noverlap": nperseg // 2,
+        "stft_window": STFT_WINDOW,
+        "noise_quantile": NOISE_QUANTILE,
+        "fap": fap,
+        "bound": bound,
+    }
 
 
 # Narrowband cleaning (STFT-based)
@@ -210,7 +266,7 @@ def clean_narrowband(
         fs=fs_new,
         nperseg=nperseg,
         noverlap=hop,
-        window="hann",
+        window=STFT_WINDOW,
         return_onesided=False,
     )
 
@@ -250,7 +306,7 @@ def clean_narrowband(
         }
         return np.zeros_like(data), np.zeros(n, dtype=bool), diag
 
-    q = np.quantile(sxx[:, good_cols], 0.394, axis=1, keepdims=True)
+    q = np.quantile(sxx[:, good_cols], NOISE_QUANTILE, axis=1, keepdims=True)
     q = np.where(q > 0, q, 1.0)
     sxx_scaled = sxx / q
 
@@ -277,7 +333,7 @@ def clean_narrowband(
         fs=fs_new,
         nperseg=nperseg,
         noverlap=hop,
-        window="hann",
+        window=STFT_WINDOW,
         input_onesided=False,
     )
 

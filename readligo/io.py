@@ -21,7 +21,7 @@ import numpy.typing as npt
 logger = logging.getLogger(__name__)
 
 # Public API
-__all__ = ["loaddata", "read_hdf5"]
+__all__ = ["loaddata", "read_hdf5", "read_meta"]
 
 
 def read_hdf5(
@@ -69,6 +69,26 @@ def read_hdf5(
 
     data_file.close()
     return strain, gps_start, ts, qmask, shortname_list, injmask, injname_list
+
+
+def read_meta(filename: str | Path) -> dict[str, str | int]:
+    """Return the ``meta`` group of a GWOSC file as a plain dict.
+
+    Keys are the GWOSC names (``Detector``, ``GPSstart``, ``Duration``,
+    ``StrainChannel``, ...); byte strings are decoded to ``str``.
+    """
+    out: dict[str, str | int] = {}
+    with h5py.File(filename, "r") as f:
+        meta = cast(h5py.Group, f["meta"])
+        for key in meta:
+            value = cast(h5py.Dataset, meta[key])[()]
+            if isinstance(value, bytes):
+                out[key] = value.decode()
+            elif isinstance(value, np.integer):
+                out[key] = int(value)
+            else:
+                out[key] = str(value)
+    return out
 
 
 def loaddata(
