@@ -1,59 +1,24 @@
-# readligo — Documentation Hub
+# readligo documentation
 
-Package for reading and cleaning LIGO/GWOSC strain data. Reads HDF5
-files, applies data-quality masks, heterodynes to a narrowband baseband,
-and removes transient artifacts via STFT-based cleaning.
-
-## Quick navigation
-
-| Document | Purpose |
+| Document | Read when |
 |---|---|
-| [project_context.md](project_context.md) | Current status, key files, conventions |
-| [pipeline_architecture.md](pipeline_architecture.md) | Preprocessing data flow and module responsibilities |
-| [preprocessing.md](preprocessing.md) | Detailed preprocessing stages (DQ, heterodyne, STFT cleaning) |
-| [rendered/](rendered/) | PDFs and TeX source (cleaning_summary) |
+| [`cleaning_pipeline.md`](cleaning_pipeline.md) | Always. How the cleaning works today, how to run it (laptop, marvin), how it was validated, what the search must still do |
+| [`cleaning_report.md`](cleaning_report.md) | The v1 → v2 redesign: what was wrong in v1, the first v2 validation (2026-11-15) |
+| [`project_context.md`](project_context.md) | Current state, layout, conventions |
+| [`pipeline_architecture.md`](pipeline_architecture.md) | Changing how the stages connect, or the product format |
+| [`preprocessing.md`](preprocessing.md) | Only for the v1 chain (`process_band`), kept for comparison |
+| [`../ISSUES.md`](../ISSUES.md) | Status of every known issue |
 
-## Pipeline at a glance
+## The chain in one picture
 
 ```
-  GWOSC HDF5 files (4 kHz strain, 4096-second segments)
-        │
-        ▼
-  ┌─────────────┐
-  │  readligo.io │   loaddata() / read_hdf5()
-  └──────┬──────┘
-         │  strain, channel_dict, gps_start
-         ▼
-  ┌──────────────────────┐
-  │  preprocessing       │
-  │  ├ apply_dq_mask     │   zero bad-DQ samples
-  │  ├ heterodyne_       │   shift band to baseband,
-  │  │  downsample       │   decimate to 1 Hz
-  │  └ clean_narrowband  │   STFT glitch removal
-  └──────┬───────────────┘
-         │
-         ▼
-  cleaned complex baseband + sample_mask
+plan_bands (Doppler-safe overlapping bands, usable source range per band)
+GWOSC files ─▶ runs of back-to-back files ─▶ DQ + injection bits ─▶ strain check
+            ─▶ 10/15 Hz zero-phase high-pass ─▶ 8 s edge tapers
+            ─▶ broadband gating (merged GPS gate list, 4 s gate tapers)
+            ─▶ mean PSD ─▶ in-band flattening gain per band
+            ─▶ FFT channelizer (all bands, one FFT per 2 h block, chunked, parallel)
+            ─▶ per band: real series at 2B, heterodyned at fmin, epoch 1238319104
+            ─▶ window/mask, noise per 1800 s, lines, outlier veto, excess-power veto
+            ─▶ H1_<fmin>-<fmax>Hz_<gps>-<dur>.h5 ─▶ export_rustyprune (data.npy, band.json)
 ```
-
-## Recent progress
-
-- Package structure set up (`readligo` installable via `pip install -e .`)
-- I/O module reads GWOSC HDF5 files with full type safety
-- Narrowband preprocessing pipeline operational (DQ masking, heterodyne
-  decimation, STFT-based transient cleaning with chi-squared test)
-
-## For new sessions
-
-If you are an AI assistant starting a new session on this project:
-
-1. **Read this file first** for high-level orientation.
-2. **Read [project_context.md](project_context.md)** for current status
-   and what to prioritize.
-3. **Read [pipeline_architecture.md](pipeline_architecture.md)** for the
-   data flow and how modules connect.
-4. **Read [preprocessing.md](preprocessing.md)** for detailed stage-by-stage
-   documentation.
-5. Source code lives in `readligo/` — `io.py` (I/O) and
-   `preprocessing.py` (signal processing).
-6. Exploratory work is in `notebooks/`.

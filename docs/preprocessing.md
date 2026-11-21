@@ -1,16 +1,22 @@
-# Data Preprocessing Pipeline
+# v1 preprocessing chain (superseded)
 
 > Source: [`readligo/preprocessing.py`](../readligo/preprocessing.py) |
 > Back to [docs README](README.md)
+
+> **This is the v1 per-file chain, kept for comparison.** Its problems are listed in
+> `ISSUES.md` (C1–C8). The pipeline that replaces it is described in
+> [`cleaning_report.md`](cleaning_report.md) (`readligo.run_pipeline`,
+> `python -m readligo clean`).
 
 ## Overview
 
 `readligo.preprocessing` takes raw LIGO strain data and produces a cleaned,
 narrowband complex time series suitable for continuous-wave (CW) searches.
-The entry point is `process_band()`, which returns four arrays:
+The entry point is `process_band()`, which returns four arrays and, with
+`loss_stats=True` (the default), a fifth: a dict that breaks down the masked samples.
 
 ```python
-gps_times, cleaned, sample_mask, fs_new = process_band(
+gps_times, cleaned, sample_mask, fs_new, breakdown = process_band(
     strain, channel_dict, gps_start, f_band=(100, 101)
 )
 ```
@@ -41,10 +47,12 @@ short-time Fourier transform approach:
 1. A two-sided STFT is computed (Hann window, 50% overlap,
    `nperseg=64` samples by default).
 2. Each frequency row is normalised by the 39.4th percentile of the power
-   across DQ-good columns. Under Gaussian noise, this maps the normalised
-   power to a chi-squared distribution with 2 degrees of freedom.
+   across DQ-good columns. For Gaussian noise the power is exponential, and
+   its 39.4th percentile is half its mean (1 − e^{−1/2} = 0.394), not the
+   mean. Power divided by half its mean is chi-squared with 2 degrees of
+   freedom, so the normalised power follows that distribution.
 3. A per-pixel chi-squared test is applied at false-alarm probability
-   `fap=0.001` (threshold ~13.8). STFT columns where more than `bound=10`
+   `fap=0.001` (threshold ~13.8). STFT columns where more than `bound=15`
    frequency bins exceed the threshold are flagged as containing broadband
    transients.
 4. All flagged columns (artifact + DQ-bad) are zeroed in the STFT domain.
@@ -109,17 +117,17 @@ duty_factor = np.sum(sample_mask) / len(sample_mask)
 | `fs` | 4096 | Raw strain sample rate (Hz) |
 | `nperseg` | 64 | STFT window length (samples at `fs_new`) |
 | `fap` | 0.001 | Per-pixel false-alarm probability |
-| `bound` | 10 | Min flagged frequency bins to declare a column bad |
+| `bound` | 15 | Min flagged frequency bins to declare a column bad (`DEFAULT_BOUND`; the stored v1 products used 15) |
 
 ## Diagnostics
 
 `clean_narrowband` returns a `diag` dictionary containing STFT intermediates
 (`freq`, `time_bins`, `sxx`, `sxx_scaled`, `good_cols`, `bad_col_mask`,
 `col_hits`, `threshold`, `fs_new`). Pass this to `plot_cleaning()` for a
-4-panel diagnostic figure, or set `plot=True` in `process_band()`:
+3-panel diagnostic figure, or set `plot=True` in `process_band()`:
 
 ```python
-gps_times, cleaned, sample_mask, fs_new = process_band(
+gps_times, cleaned, sample_mask, fs_new, breakdown = process_band(
     strain, channel_dict, gps_start, (100, 101), plot=True
 )
 ```
