@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "readligo"
-version = "0.1.0"
-description = "LIGO gravitational-wave data I/O and narrowband preprocessing"
+version = "0.2.0"
+description = "GWOSC strain I/O and the narrowband cleaning pipeline that feeds CW searches"
 readme = "README.md"
 license = { text = "MIT" }
 authors = [
@@ -23,19 +23,35 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Typing :: Typed",
 ]
+# Tested with numpy 2.0.2, scipy 1.16.3, h5py 3.15.1 (ISSUES.md E2).
 dependencies = [
-    "h5py>=3.16.0",
-    "numpy>=2.4.3",
-    "scipy>=1.17.1",
-    "matplotlib>=3.10.8",
-    "pycbc>=2.10.0",
+    "h5py>=3.9",
+    "numpy>=1.26",
+    "scipy>=1.11",
 ]
 
 [project.optional-dependencies]
+# v1 chain: plot_cleaning needs matplotlib, process_run needs rich.
+legacy = [
+    "matplotlib>=3.7",
+    "rich>=13",
+]
+# Validation scripts (scripts/validation): LALSuite for SSB timing, SFTs and ComputeFstatistic_v2.
+validation = [
+    "lalsuite>=7.20",
+    "solar-system-ephemerides",
+]
 dev = [
+    "pytest>=7",
     "jupyter>=1.0",
     "ipykernel>=6.0",
 ]
+
+[project.scripts]
+readligo = "readligo.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
 [tool.setuptools.packages.find]
 where = ["."]
