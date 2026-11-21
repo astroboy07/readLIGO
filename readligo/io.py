@@ -10,6 +10,7 @@ use the LALSuite tools directly.
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
 
@@ -21,7 +22,7 @@ import numpy.typing as npt
 logger = logging.getLogger(__name__)
 
 # Public API
-__all__ = ["loaddata", "read_hdf5", "read_meta"]
+__all__ = ["GwoscFile", "loaddata", "read_gwosc", "read_hdf5", "read_meta"]
 
 
 def read_hdf5(
@@ -37,38 +38,147 @@ def read_hdf5(
     npt.NDArray[np.int32],
     list[str],
 ]:
-    """Read HDF5 files and extract LIGO data."""
-    data_file = h5py.File(filename, "r")
+    """Read HDF5 files and extract LIGO data (legacy tuple interface).
 
-    # -- Read the strain
-    strain_group = cast(h5py.Group, data_file["strain"])
-    strain_ds = cast(h5py.Dataset, strain_group["Strain"])
-    strain: npt.NDArray[np.float64] = (
-        cast(npt.NDArray[np.float64], strain_ds[...])
-        if readstrain
-        else np.empty(0, dtype=np.float64)
-    )
-    ts = float(cast(np.floating, strain_ds.attrs["Xspacing"]))
+    New code should use :func:`read_gwosc`, which validates the file and
+    returns named fields.
+    """
+    with h5py.File(filename, "r") as data_file:
+        # -- Read the strain
+        strain_group = cast(h5py.Group, data_file["strain"])
+        strain_ds = cast(h5py.Dataset, strain_group["Strain"])
+        strain: npt.NDArray[np.float64] = (
+            cast(npt.NDArray[np.float64], strain_ds[...])
+            if readstrain
+            else np.empty(0, dtype=np.float64)
+        )
+        ts = float(cast(np.floating, strain_ds.attrs["Xspacing"]))
 
-    # -- Read the DQ information
-    quality_group = cast(h5py.Group, data_file["quality"])
-    dq_info = cast(h5py.Group, quality_group["simple"])
-    qmask = cast(h5py.Dataset, dq_info["DQmask"])[...]
-    shortname_array = cast(h5py.Dataset, dq_info["DQShortnames"])[...]
-    shortname_list = list(shortname_array)
+        # -- Read the DQ information
+        quality_group = cast(h5py.Group, data_file["quality"])
+        dq_info = cast(h5py.Group, quality_group["simple"])
+        qmask = cast(h5py.Dataset, dq_info["DQmask"])[...]
+        shortname_array = cast(h5py.Dataset, dq_info["DQShortnames"])[...]
+        shortname_list = list(shortname_array)
 
-    # -- Read the INJ information
-    inj_info = cast(h5py.Group, data_file["quality/injections"])
-    injmask = cast(h5py.Dataset, inj_info["Injmask"])[...]
-    injname_array = cast(h5py.Dataset, inj_info["InjShortnames"])[...]
-    injname_list = list(injname_array)
+        # -- Read the INJ information
+        inj_info = cast(h5py.Group, data_file["quality/injections"])
+        injmask = cast(h5py.Dataset, inj_info["Injmask"])[...]
+        injname_array = cast(h5py.Dataset, inj_info["InjShortnames"])[...]
+        injname_list = list(injname_array)
 
-    # -- Read the meta data
-    meta = cast(h5py.Group, data_file["meta"])
-    gps_start = float(cast(np.floating, cast(h5py.Dataset, meta["GPSstart"])[...]))
+        # -- Read the meta data
+        meta = cast(h5py.Group, data_file["meta"])
+        gps_start = float(cast(np.floating, cast(h5py.Dataset, meta["GPSstart"])[...]))
 
-    data_file.close()
     return strain, gps_start, ts, qmask, shortname_list, injmask, injname_list
+
+
+def _decode(value: object) -> str:
+    return value.decode() if isinstance(value, bytes) else str(value)
+
+
+def _bitmask_channels(
+    mask: npt.NDArray[np.integer], names: npt.NDArray[np.bytes_]
+) -> dict[str, npt.NDArray[np.bool_]]:
+    """Split a GWOSC bitmask time series into one boolean array per bit."""
+    return {_decode(name): ((mask >> bit) & 1).astype(bool) for bit, name in enumerate(names)}
+
+
+@dataclass(frozen=True)
+class GwoscFile:
+    """Contents of one GWOSC strain file, validated.
+
+    Attributes
+    ----------
+    path
+        File the data came from.
+    ifo
+        Detector name from ``meta/Detector`` (e.g. ``"H1"``).
+    gps_start, duration
+        Integer GPS start and length in seconds.
+    fs
+        Sample rate in Hz, from ``strain/Strain.attrs["Xspacing"]``.
+    strain_channel
+        LIGO channel the strain was taken from.
+    dq
+        One boolean array per DQ bit (1 value per second, ``True`` = passes).
+    injections
+        One boolean array per hardware-injection bit (1 value per second;
+        GWOSC names them ``NO_*_HW_INJ``, so ``True`` = no injection).
+    strain
+        Strain samples (NaN where ``DATA`` is off), or ``None`` if not read.
+    """
+
+    path: Path
+    ifo: str
+    gps_start: int
+    duration: int
+    fs: int
+    strain_channel: str
+    dq: dict[str, npt.NDArray[np.bool_]]
+    injections: dict[str, npt.NDArray[np.bool_]]
+    strain: npt.NDArray[np.float64] | None
+
+
+def read_gwosc(path: str | Path, *, read_strain: bool = True) -> GwoscFile:
+    """Read and validate one GWOSC HDF5 strain file.
+
+    Raises
+    ------
+    ValueError
+        If the file is empty, not ``.hdf5``, or internally inconsistent (sample
+        spacing not 1/integer Hz, sample count or DQ length not matching the
+        duration, or ``Xstart`` not matching ``GPSstart``).
+    """
+    path = Path(path)
+    if path.suffix.lower() != ".hdf5":
+        raise ValueError(f"Only HDF5 files (.hdf5) are supported, got {path.name}")
+    if path.stat().st_size == 0:
+        raise ValueError(f"File is empty: {path}")
+
+    with h5py.File(path, "r") as f:
+        meta = cast(h5py.Group, f["meta"])
+        ifo = _decode(cast(h5py.Dataset, meta["Detector"])[()])
+        gps_start = int(cast(h5py.Dataset, meta["GPSstart"])[()])
+        duration = int(cast(h5py.Dataset, meta["Duration"])[()])
+        strain_channel = _decode(cast(h5py.Dataset, meta["StrainChannel"])[()])
+
+        strain_ds = cast(h5py.Dataset, f["strain/Strain"])
+        spacing = float(cast(np.floating, strain_ds.attrs["Xspacing"]))
+        fs = int(round(1.0 / spacing))
+        if abs(fs * spacing - 1.0) > 1e-9:
+            raise ValueError(f"{path.name}: Xspacing {spacing} is not 1/integer Hz")
+        if strain_ds.shape != (duration * fs,):
+            raise ValueError(
+                f"{path.name}: {strain_ds.shape[0]} samples, expected {duration} s x {fs} Hz"
+            )
+        if int(cast(np.integer, strain_ds.attrs["Xstart"])) != gps_start:
+            raise ValueError(f"{path.name}: strain Xstart does not match meta/GPSstart")
+        strain = cast(npt.NDArray[np.float64], strain_ds[...]) if read_strain else None
+
+        simple = cast(h5py.Group, f["quality/simple"])
+        dq_mask = cast(h5py.Dataset, simple["DQmask"])[...]
+        if dq_mask.shape != (duration,):
+            raise ValueError(f"{path.name}: DQmask has {dq_mask.shape[0]} values, expected {duration}")
+        dq = _bitmask_channels(dq_mask, cast(h5py.Dataset, simple["DQShortnames"])[...])
+
+        inj = cast(h5py.Group, f["quality/injections"])
+        injections = _bitmask_channels(
+            cast(h5py.Dataset, inj["Injmask"])[...], cast(h5py.Dataset, inj["InjShortnames"])[...]
+        )
+
+    return GwoscFile(
+        path=path,
+        ifo=ifo,
+        gps_start=gps_start,
+        duration=duration,
+        fs=fs,
+        strain_channel=strain_channel,
+        dq=dq,
+        injections=injections,
+        strain=strain,
+    )
 
 
 def read_meta(filename: str | Path) -> dict[str, str | int]:
