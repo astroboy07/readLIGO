@@ -18,3 +18,11 @@ docs/rendered/
 
 # OS
 .DS_Store
+
+# v2 pipeline products and scratch (large data, never committed)
+products/
+_work/
+
+# Not for the repository (ISSUES.md E10): copyrighted paper, local settings
+docs/gatestrain.pdf
+.claude/settings.local.json
