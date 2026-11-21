@@ -1,22 +1,34 @@
-import subprocess
-import sys
+"""v1 batch driver: one output file per raw file and band (kept for comparison).
+
+New work should use :func:`readligo.run_pipeline` (``python -m readligo clean``).
+"""
+import os
 from collections.abc import Mapping
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 import h5py
 import numpy as np
-import scipy
 from rich.progress import track
+
 from .io import loaddata, read_meta
 from .preprocessing import process_band, processing_attrs
+from .provenance import provenance_attrs
 
 
 DETECTORS = ("H1", "L1")
 
-DATA_DIRNAME = "/Users/saifa/Library/CloudStorage/OneDrive-weizmann.ac.il/O3a_marvin/"
-OUT_DIRNAME = "/Users/saifa/Library/CloudStorage/OneDrive-weizmann.ac.il/O3a_marvin_processed"
+#: Default directories come from these environment variables (ISSUES.md E8).
+DATA_DIR_ENV = "READLIGO_DATA_DIR"
+OUT_DIR_ENV = "READLIGO_OUT_DIR"
+
+
+def _dir_from_env(value: str | Path | None, env: str) -> Path:
+    if value is not None:
+        return Path(value)
+    if os.environ.get(env):
+        return Path(os.environ[env])
+    raise ValueError(f"no directory given and ${env} is not set")
 
 
 def _format_freq(f: float) -> str:
@@ -35,34 +47,6 @@ def output_path(
     """Path of the processed file for one source file and frequency band."""
     band = f"{_format_freq(f_band[0])}-{_format_freq(f_band[1])}"
     return Path(out_dir) / f"{Path(source_filename).stem}_f_band_{band}Hz.hdf5"
-
-
-def _git(*args: str) -> str | None:
-    """Run git in the package directory; None if git or the repo is unavailable."""
-    try:
-        out = subprocess.run(
-            ["git", "-C", str(Path(__file__).resolve().parent), *args],
-            capture_output=True, text=True, check=True, timeout=10,
-        )
-    except (OSError, subprocess.SubprocessError):
-        return None
-    return out.stdout.strip()
-
-
-def provenance_attrs() -> dict[str, str | bool]:
-    """Code and library versions, for reproducing a product later."""
-    commit = _git("rev-parse", "HEAD")
-    status = _git("status", "--porcelain", "--", ".")
-    return {
-        "readligo_git_commit": commit or "unknown",
-        # True if readligo/ had uncommitted changes when the file was made.
-        "readligo_git_dirty": bool(status) if status is not None else True,
-        "python_version": sys.version.split()[0],
-        "numpy_version": np.__version__,
-        "scipy_version": scipy.__version__,
-        "h5py_version": h5py.__version__,
-        "created_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-    }
 
 
 def source_attrs(source_path: str | Path) -> dict[str, str | int]:
@@ -130,12 +114,20 @@ def process_ligo_files(
     f_band: tuple[float, float],
     nperseg: int = 64,
     fap: float = 0.001,
-    bound: int = 10,
-    data_dirname: str = DATA_DIRNAME,
-    process_dirname: str = OUT_DIRNAME,
+    bound: int = 15,
+    data_dirname: str | Path | None = None,
+    process_dirname: str | Path | None = None,
     *,
     overwrite: bool = False,
+    loss_stats: bool = True,
 ) -> None:
+    """Run the v1 chain on every file in *data_dirname* (default ``$READLIGO_DATA_DIR``).
+
+    ``bound`` defaults to 15, the value the stored v1 products were made with
+    (ISSUES.md V1); it is recorded in each output.
+    """
+    data_dirname = _dir_from_env(data_dirname, DATA_DIR_ENV)
+    process_dirname = _dir_from_env(process_dirname, OUT_DIR_ENV)
     hdf5_files = list(Path(data_dirname).glob("*.hdf5"))
     hdf5_files_sorted = sorted(
         hdf5_files,
@@ -155,11 +147,11 @@ def process_ligo_files(
     fs = 4096  # GWOSC 4 kHz release
     run_attrs = provenance_attrs()
     for files in track(hdf5_files_sorted, description="Processing files"):
-        strain, time, channel_dict = loaddata(data_dirname + files.name)
+        strain, time, channel_dict = loaddata(str(files))
         assert isinstance(time, np.ndarray), "expected time vector"
         gpsStart = time[0]
         attrs = {
-            **source_attrs(data_dirname + files.name),
+            **source_attrs(files),
             **processing_attrs(gpsStart, f_band, fs=fs, nperseg=nperseg, fap=fap, bound=bound),
             **run_attrs,
         }
@@ -173,7 +165,7 @@ def process_ligo_files(
             nperseg=nperseg,
             bound=bound,
             plot=False,
-            loss_stats=True,
+            loss_stats=loss_stats,
         )
         save_hdf5_file(
             process_dirname,

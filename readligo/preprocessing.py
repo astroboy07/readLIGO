@@ -1,3 +1,10 @@
+"""v1 cleaning chain, per file and per band (kept for comparison; superseded).
+
+DQ mask, complex heterodyne at the band centre, multi-stage decimation to
+about B, and an STFT chi-square cleaner. ISSUES.md documents its problems
+(C1-C8); ``docs/cleaning_report.md`` describes the v2 pipeline that replaces
+it (:func:`readligo.run_pipeline`).
+"""
 from __future__ import annotations
 
 import logging
@@ -30,6 +37,8 @@ STFT_WINDOW = "hann"
 # Dividing |Z|^2 by this quantile makes it chi2(2) in Gaussian noise
 # (the chi2(2) CDF at 1 is 1 - exp(-1/2) = 0.3935).
 NOISE_QUANTILE = 0.394
+#: Default ``bound`` (ISSUES.md V1): the value the stored v1 products were made with.
+DEFAULT_BOUND = 15
 
 
 # Data quality masking
@@ -160,7 +169,7 @@ def processing_attrs(
     fs: int = 4096,
     nperseg: int = 64,
     fap: float = 0.001,
-    bound: int = 10,
+    bound: int = DEFAULT_BOUND,
 ) -> dict[str, str | int | float | list[int] | list[float] | list[str]]:
     """Every setting :func:`process_band` uses, as flat HDF5-ready attrs.
 
@@ -223,7 +232,7 @@ def clean_narrowband(
     *,
     nperseg: int = 64,
     fap: float = 0.001,
-    bound: int = 10,
+    bound: int = DEFAULT_BOUND,
 ) -> tuple[np.ndarray, np.ndarray, dict]:
     """Remove transient artifacts from narrowband complex data.
 
@@ -374,7 +383,7 @@ def data_loss_stats(
     dq_mask_1hz: np.ndarray,
     diag: dict,
     *,
-    bound: int = 10,
+    bound: int = DEFAULT_BOUND,
 ) -> dict[str, int | float]:
     """Classify masked samples into DQ-bad, STFT-boundary, and artifact loss.
 
@@ -387,7 +396,8 @@ def data_loss_stats(
     diag
         Diagnostics dict from :func:`clean_narrowband`.
     bound
-        Column-hit threshold (must match the value used in cleaning).
+        Ignored (kept so existing calls still work): the artifact columns
+        are already in *diag*, computed with the cleaning's own ``bound``.
 
     Returns
     -------
@@ -452,9 +462,8 @@ def data_loss_stats(
             int(np.sum(masked)),
         )
     
-    # DQ duty factor
-    dq_mask_fs = np.repeat(dq_mask_1hz, 4096)
-    dq_duty_factor = 1-(np.sum(~dq_mask_fs)/len(dq_mask_fs))
+    # DQ duty factor: the fraction of DQ-good seconds (independent of the sample rate)
+    dq_duty_factor = float(np.mean(np.asarray(dq_mask_1hz, dtype=bool)))
 
     return {
         "n_samples": n,
@@ -476,7 +485,7 @@ def process_band(
     fs: int = 4096,
     nperseg: int = 64,
     fap: float = 0.001,
-    bound: int = 10,
+    bound: int = DEFAULT_BOUND,
     plot: bool = False,
     loss_stats: bool = False,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, float, dict[str, int | float] | None]:
@@ -539,7 +548,7 @@ def plot_cleaning(
     cleaned: np.ndarray,
     diag: dict,
     *,
-    bound: int = 10,
+    bound: int = DEFAULT_BOUND,
 ) -> None:
     """Visualize the narrowband cleaning procedure.
 
