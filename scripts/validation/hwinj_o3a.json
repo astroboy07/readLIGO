@@ -1,0 +1,668 @@
+{
+ "description": "O3 LIGO CW hardware injections: GWOSC O3April1-epoch parameters (https://gwosc.org/O3/O3April1_injection_parameters/, binary orbits from https://gwosc.org/O3/o3_inj/), the H1 band used for each, and the expected and measured coherent 2F from a study of the raw strain of the 56 local O3a H1 files (November 2026, before readLIGO v2). 'gated' numbers used a diagnostic glitch gate, not readLIGO's.",
+ "conventions": {
+  "frequencies": "gravitational-wave frequency and derivatives (= 2x rotational)",
+  "ref_time": "SSB reference epoch in GPS seconds (P0-P9 751680013, P10-P15 930582085, P16-P17 1230336018 = 2019-01-01T00:00:00 UTC)",
+  "phase": "phi0_gw_rad is the initial GW phase at ref_time in the LAL/MFDv5 convention h = F+ A+ cos(Phi) + Fx Ax sin(Phi); validated on the data (measured phase offsets consistent with 0 for P01, P04, P06, P14, P16). phi0_rot_rad_as_listed is the GWOSC 'phi0_Rot' column; for P2, P4, P5, P9, P12 it pairs with psi+pi/2, not the listed psi.",
+  "amplitudes": "A+ = h0(1+cos^2 iota)/2, Ax = h0 cos iota",
+  "f2dot": "not given by GWOSC; zero",
+  "band": "fmin and B are integer multiples of 1/1800 Hz (band.fmin_bins_1800, band.B_bins_1800); track over the full GPS span lies inside [fmin+0.01, fmin+B-0.01] Hz"
+ },
+ "gwosc_4khz_filter": "g(f) = |H(f)|^2 of cheby1(8, 0.05 dB, 0.2) at 16384 Hz (zero-phase); expected values include g^2; confirmed by the P14 amplitude ratio",
+ "injections": [
+  {
+   "name": "P00",
+   "f0_gw_Hz": 265.5771052,
+   "f1dot_gw_Hz_s": -4.15e-12,
+   "f2dot_gw_Hz_s2": 0.0,
+   "ref_time_gps": 751680013,
+   "ra_rad": 1.248816734,
+   "dec_rad": -0.981180225,
+   "h0": 6.124223574840892e-26,
+   "cosi": 0.794905281849703,
+   "psi_rad": 0.770087086,
+   "phi0_gw_rad": 2.66,
+   "binary": null,
+   "h1_track_Hz": [
+    265.57183359478233,
+    265.57257638431963
+   ],
+   "band_bins_1800": [
+    477940,
+    180
+   ],
+   "gwosc4k_amplitude_gain": 0.9989187778128554,
+   "raw_strain_study": {
+    "ungated": {
+     "expected_2F": 10.382719039086897,
+     "measured_2F": 15.248809291385303,
+     "expected_2F_unweighted": 4.6533594156677545
+    },
+    "gated": {
+     "expected_2F": 13.710490558224873,
+     "measured_2F": 23.878583644474272,
+     "expected_2F_unweighted": 11.268588981490518
+    }
+   },
+   "recoverable_5p8d_H1": "no"
+  },
+  {
+   "name": "P01",
+   "f0_gw_Hz": 849.0832962,
+   "f1dot_gw_Hz_s": -3e-10,
+   "f2dot_gw_Hz_s2": 0.0,
+   "ref_time_gps": 751680013,
+   "ra_rad": 0.652645832,
+   "dec_rad": -0.514042406,
+   "h0": 5.473751357459903e-25,
+   "cosi": 0.46382241025823595,
+   "psi_rad": 0.35603553,
+   "phi0_gw_rad": 1.28,
+   "binary": null,
+   "h1_track_Hz": [
+    848.9235262667121,
+    848.9300617609621
+   ],
+   "band_bins_1800": [
+    1527978,
+    180
+   ],
+   "gwosc4k_amplitude_gain": 0.9976016941400603,
+   "raw_strain_study": {
+    "ungated": {
+     "expected_2F": 73.83782702500807,
+     "measured_2F": 60.214102131614666,
+     "expected_2F_unweighted": 71.24800280723662
+    },
+    "gated": {
+     "expected_2F": 76.12602306887635,
+     "measured_2F": 65.20282595728136,
+     "expected_2F_unweighted": 74.99886967512414
+    }
+   },
+   "recoverable_5p8d_H1": "yes"
+  },
+  {
+   "name": "P02",
+   "f0_gw_Hz": 575.163573,
+   "f1dot_gw_Hz_s": -1.37e-13,
+   "f2dot_gw_Hz_s2": 0.0,
+   "ref_time_gps": 751680013,
+   "ra_rad": 3.75692884,
+   "dec_rad": 0.060108958,
+   "h0": 7.591844081675615e-26,
+   "cosi": -0.9285760370095194,
+   "psi_rad": -0.221788475,
+   "phi0_gw_rad": 4.03,
+   "binary": null,
+   "h1_track_Hz": [
+    575.1781586464188,
+    575.1837039153305
+   ],
+   "band_bins_1800": [
+    1035236,
+    180
+   ],
+   "gwosc4k_amplitude_gain": 0.9899540223068528,
+   "raw_strain_study": {
+    "ungated": {
+     "expected_2F": 8.679810976576722,
+     "measured_2F": 2.7228807936760346,
+     "expected_2F_unweighted": 7.205698968059229
+    },
+    "gated": {
+     "expected_2F": 8.943124833430549,
+     "measured_2F": 3.5314919586987754,
+     "expected_2F_unweighted": 8.26657617679335
+    }
+   },
+   "recoverable_5p8d_H1": "no"
+  },
+  {
+   "name": "P03",
+   "f0_gw_Hz": 108.8571594,
+   "f1dot_gw_Hz_s": -1.46e-17,
+   "f2dot_gw_Hz_s2": 0.0,
+   "ref_time_gps": 751680013,
+   "ra_rad": 3.113188712,
+   "dec_rad": -0.583578803,
+   "h0": 1.297972551562343e-25,
+   "cosi": -0.08066554348818275,
+   "psi_rad": 0.444280306,
+   "phi0_gw_rad": 5.53,
+   "binary": null,
+   "h1_track_Hz": [
+    108.85663670977263,
+    108.85767325514516
+   ],
+   "band_bins_1800": [
+    195853,
+    180
+   ],
+   "gwosc4k_amplitude_gain": 0.9912995762055162,
+   "raw_strain_study": {
+    "ungated": {
+     "expected_2F": 6.604876533328536,
+     "measured_2F": 5.7765356194516055,
+     "expected_2F_unweighted": 4.14752149932296
+    },
+    "gated": {
+     "expected_2F": 9.323045329447007,
+     "measured_2F": 12.179574790165859,
+     "expected_2F_unweighted": 5.289954356477001
+    }
+   },
+   "recoverable_5p8d_H1": "no"
+  },
+  {
+   "name": "P04",
+   "f0_gw_Hz": 1403.163331,
+   "f1dot_gw_Hz_s": -2.54e-08,
+   "f2dot_gw_Hz_s2": 0.0,
+   "ref_time_gps": 751680013,
+   "ra_rad": 4.886706854,
+   "dec_rad": -0.217583646,
+   "h0": 1.0676021638766947e-24,
+   "cosi": 0.2773206368008296,
+   "psi_rad": -0.647939117,
+   "phi0_gw_rad": 4.83,
+   "binary": null,
+   "h1_track_Hz": [
+    1390.9287761971214,
+    1390.9424738591376
+   ],
+   "band_bins_1800": [
+    2503594,
+    180
+   ],
+   "gwosc4k_amplitude_gain": 0.9997833002585215,
+   "raw_strain_study": {
+    "ungated": {
+     "expected_2F": 77.09529276427462,
+     "measured_2F": 65.99941786934092,
+     "expected_2F_unweighted": 75.99984046556057
+    },
+    "gated": {
+     "expected_2F": 79.23446759788557,
+     "measured_2F": 70.5920945516189,
+     "expected_2F_unweighted": 78.94097657441198
+    }
+   },
+   "recoverable_5p8d_H1": "yes"
+  },
+  {
+   "name": "P05",
+   "f0_gw_Hz": 52.80832436,
+   "f1dot_gw_Hz_s": -4.03e-18,
+   "f2dot_gw_Hz_s2": 0.0,
+   "ref_time_gps": 751680013,
+   "ra_rad": 5.281831296,
+   "dec_rad": -1.463269033,
+   "h0": 3.985257027977581e-25,
+   "cosi": 0.46296727166248236,
+   "psi_rad": -0.363953188,
+   "phi0_gw_rad": 2.23,
+   "binary": null,
+   "h1_track_Hz": [
+    52.810816061418734,
+    52.81085345309931
+   ],
+   "band_bins_1800": [
+    94970,
+    180
+   ],
+   "gwosc4k_amplitude_gain": 0.9892428163189636,
+   "raw_strain_study": {
+    "ungated": {
+     "expected_2F": 21.151644793610984,
+     "measured_2F": 10.466670527067018,
+     "expected_2F_unweighted": 4.505914358275641
+    },
+    "gated": {
+     "expected_2F": 33.02879491964916,
+     "measured_2F": 26.25441718767985,
+     "expected_2F_unweighted": 12.469247250164964
+    }
+   },
+   "recoverable_5p8d_H1": "marginal"
+  },
+  {
+   "name": "P06",
+   "f0_gw_Hz": 148.7190257,
+   "f1dot_gw_Hz_s": -6.73e-09,
+   "f2dot_gw_Hz_s2": 0.0,
+   "ref_time_gps": 751680013,
+   "ra_rad": 6.261385269,
+   "dec_rad": -1.14184021,
+   "h0": 3.84344031387069e-25,
+   "cosi": -0.1537328791824965,
+   "psi_rad": 0.470984879,
+   "phi0_gw_rad": 0.97,
+   "binary": null,
+   "h1_track_Hz": [
+    145.44844966845636,
+    145.45139719894667
+   ],
+   "band_bins_1800": [
+    261720,
+    180
+   ],
+   "gwosc4k_amplitude_gain": 0.9931337457579171,
+   "raw_strain_study": {
+    "ungated": {
+     "expected_2F": 42.00597552033121,
+     "measured_2F": 59.96487652489225,
+     "expected_2F_unweighted": 7.733525832835615
+    },
+    "gated": {
+     "expected_2F": 70.98638254449743,
+     "measured_2F": 74.77840025576432,
+     "expected_2F_unweighted": 32.97239376275357
+    }
+   },
+   "recoverable_5p8d_H1": "yes"
+  },
+  {
+   "name": "P07",
+   "f0_gw_Hz": 1220.979581,
+   "f1dot_gw_Hz_s": -1.12e-09,
+   "f2dot_gw_Hz_s2": 0.0,
+   "ref_time_gps": 751680013,
+   "ra_rad": 3.899512716,
+   "dec_rad": -0.356930834,
+   "h0": 1.6531151276220903e-25,
+   "cosi": 0.7568140162119182,
+   "psi_rad": 0.512322887,
+   "phi0_gw_rad": 5.25,
+   "binary": null,
+   "h1_track_Hz": [
+    1220.4961687908726,
+    1220.507308769462
+   ],
+   "band_bins_1800": [
+    2196813,
+    180
+   ],
+   "gwosc4k_amplitude_gain": 0.9895871586936992,
+   "raw_strain_study": {
+    "ungated": {
+     "expected_2F": 9.70797767797001,
+     "measured_2F": 13.944893069667732,
+     "expected_2F_unweighted": 9.600225108190378
+    },
+    "gated": {
+     "expected_2F": 9.805911778869724,
+     "measured_2F": 14.401348711421354,
+     "expected_2F_unweighted": 9.74305155536005
+    }
+   },
+   "recoverable_5p8d_H1": "no"
+  },
+  {
+   "name": "P08",
+   "f0_gw_Hz": 194.3083185,
+   "f1dot_gw_Hz_s": -8.65e-09,
+   "f2dot_gw_Hz_s2": 0.0,
+   "ref_time_gps": 751680013,
+   "ra_rad": 6.132905166,
+   "dec_rad": -0.583263151,
+   "h0": 1.3019155750808516e-25,
+   "cosi": 0.07390265603547717,
+   "psi_rad": 0.170470927,
+   "phi0_gw_rad": 5.89,
+   "binary": null,
+   "h1_track_Hz": [
+    190.1062707924079,
+    190.10939501816517
+   ],
+   "band_bins_1800": [
+    342104,
+    180
+   ],
+   "gwosc4k_amplitude_gain": 0.9955435544847364,
+   "raw_strain_study": {
+    "ungated": {
+     "expected_2F": 7.696944439814766,
+     "measured_2F": 5.365582361087518,
+     "expected_2F_unweighted": 4.409700904420924
+    },
+    "gated": {
+     "expected_2F": 9.520148655288457,
+     "measured_2F": 1.9302840070888019,
+     "expected_2F_unweighted": 6.136607277936094
+    }
+   },
+   "recoverable_5p8d_H1": "no"
+  },
+  {
+   "name": "P09",
+   "f0_gw_Hz": 763.8473165,
+   "f1dot_gw_Hz_s": -1.45e-17,
+   "f2dot_gw_Hz_s2": 0.0,
+   "ref_time_gps": 751680013,
+   "ra_rad": 3.471208243,
+   "dec_rad": 1.321032538,
+   "h0": 1.2956436031154028e-25,
+   "cosi": -0.6191873714800018,
+   "psi_rad": -0.008560279,
+   "phi0_gw_rad": 1.01,
+   "binary": null,
+   "h1_track_Hz": [
+    763.8195666396368,
+    763.8209178980345
+   ],
+   "band_bins_1800": [
+    1374786,
+    180
+   ],
+   "gwosc4k_amplitude_gain": 0.9924801150743886,
+   "raw_strain_study": {
+    "ungated": {
+     "expected_2F": 12.951508890902286,
+     "measured_2F": 13.24183924436425,
+     "expected_2F_unweighted": 11.71726957874225
+    },
+    "gated": {
+     "expected_2F": 13.423352077237036,
+     "measured_2F": 13.693937280449749,
+     "expected_2F_unweighted": 13.155209622305767
+    }
+   },
+   "recoverable_5p8d_H1": "no"
+  },
+  {
+   "name": "P10",
+   "f0_gw_Hz": 26.3589129,
+   "f1dot_gw_Hz_s": -8.5e-11,
+   "f2dot_gw_Hz_s2": 0.0,
+   "ref_time_gps": 930582085,
+   "ra_rad": 3.86687548714555,
+   "dec_rad": 0.74835013347064,
+   "h0": 6.262497962511783e-25,
+   "cosi": -0.9877496398539855,
+   "psi_rad": 0.61465097870534,
+   "phi0_gw_rad": 0.11626181938654,
+   "binary": null,
+   "h1_track_Hz": [
+    26.33276623398126,
+    26.33296564822913
+   ],
+   "band_bins_1800": [
+    47309,
+    180
+   ],
+   "gwosc4k_amplitude_gain": 0.9887271358829325,
+   "raw_strain_study": {
+    "ungated": {
+     "expected_2F": 7.856011195320297,
+     "measured_2F": 7.597063551379957,
+     "expected_2F_unweighted": 4.161695821721688
+    },
+    "gated": {
+     "expected_2F": 11.750106124614918,
+     "measured_2F": 14.005301895707632,
+     "expected_2F_unweighted": 6.587465475476494
+    }
+   },
+   "recoverable_5p8d_H1": "no"
+  },
+  {
+   "name": "P11",
+   "f0_gw_Hz": 31.4248598,
+   "f1dot_gw_Hz_s": -5.07e-13,
+   "f2dot_gw_Hz_s2": 0.0,
+   "ref_time_gps": 930582085,
+   "ra_rad": 4.97588715777288,
+   "dec_rad": -1.01703990217401,
+   "h0": 3.171489561862042e-25,
+   "cosi": -0.3293884870999393,
+   "psi_rad": 0.41170074258401,
+   "phi0_gw_rad": 5.16105342591198,
+   "binary": null,
+   "h1_track_Hz": [
+    31.427218126108837,
+    31.427269365945268
+   ],
+   "band_bins_1800": [
+    56479,
+    180
+   ],
+   "gwosc4k_amplitude_gain": 0.9888004764855387,
+   "raw_strain_study": {
+    "ungated": {
+     "expected_2F": 4.810758297820689,
+     "measured_2F": 14.972264899831796,
+     "expected_2F_unweighted": 4.016461325197275
+    },
+    "gated": {
+     "expected_2F": 5.323260684532036,
+     "measured_2F": 14.205027434011624,
+     "expected_2F_unweighted": 4.072438760004518
+    }
+   },
+   "recoverable_5p8d_H1": "no"
+  },
+  {
+   "name": "P12",
+   "f0_gw_Hz": 39.7276097,
+   "f1dot_gw_Hz_s": -6.25e-09,
+   "f2dot_gw_Hz_s2": 0.0,
+   "ref_time_gps": 930582085,
+   "ra_rad": 5.79192171375131,
+   "dec_rad": -0.29623266832328,
+   "h0": 2.6309315022969274e-25,
+   "cosi": 0.044023145242497896,
+   "psi_rad": -0.06838043165037,
+   "phi0_gw_rad": 2.79415364495732,
+   "binary": null,
+   "h1_track_Hz": [
+    37.80490542653658,
+    37.80778503142669
+   ],
+   "band_bins_1800": [
+    67961,
+    180
+   ],
+   "gwosc4k_amplitude_gain": 0.9889099823518265,
+   "raw_strain_study": {
+    "ungated": {
+     "expected_2F": 4.284540036332851,
+     "measured_2F": 6.109720139663386,
+     "expected_2F_unweighted": 4.0109119692971005
+    },
+    "gated": {
+     "expected_2F": 4.508770602683931,
+     "measured_2F": 9.701317970005805,
+     "expected_2F_unweighted": 4.057924952521762
+    }
+   },
+   "recoverable_5p8d_H1": "no"
+  },
+  {
+   "name": "P13",
+   "f0_gw_Hz": 12.43,
+   "f1dot_gw_Hz_s": -1e-11,
+   "f2dot_gw_Hz_s2": 0.0,
+   "ref_time_gps": 930582085,
+   "ra_rad": 0.25,
+   "dec_rad": 0.25,
+   "h0": 2.646188733785785e-24,
+   "cosi": 6.123233995736766e-17,
+   "psi_rad": 0.0,
+   "phi0_gw_rad": 0.25,
+   "binary": null,
+   "h1_track_Hz": [
+    12.426741542849312,
+    12.426870005078658
+   ],
+   "band_bins_1800": null,
+   "gwosc4k_amplitude_gain": 0.9885920012488446,
+   "raw_strain_study": {
+    "ungated": {
+     "expected_2F": 4.002350614398758,
+     "measured_2F": 1.399995818997075,
+     "expected_2F_unweighted": 4.000996314420282
+    },
+    "gated": {
+     "expected_2F": 4.003199142852763,
+     "measured_2F": 6.301039642019493,
+     "expected_2F_unweighted": 4.002716251144791
+    }
+   },
+   "recoverable_5p8d_H1": "no"
+  },
+  {
+   "name": "P14",
+   "f0_gw_Hz": 1991.0926,
+   "f1dot_gw_Hz_s": -1e-12,
+   "f2dot_gw_Hz_s2": 0.0,
+   "ref_time_gps": 930582085,
+   "ra_rad": 5.25,
+   "dec_rad": -0.25,
+   "h0": 1.8257418583505536e-24,
+   "cosi": 6.123233995736766e-17,
+   "psi_rad": 1.0,
+   "phi0_gw_rad": 1.25,
+   "binary": null,
+   "h1_track_Hz": [
+    1991.2760394410168,
+    1991.2852138986234
+   ],
+   "band_bins_1800": [
+    3584215,
+    180
+   ],
+   "gwosc4k_amplitude_gain": 0.00712333704520434,
+   "raw_strain_study": {
+    "ungated": {
+     "expected_2F": 78.50418261353975,
+     "measured_2F": 73.40220071053992,
+     "expected_2F_unweighted": 78.20974395636959
+    },
+    "gated": {
+     "expected_2F": 78.9888390078491,
+     "measured_2F": 73.75371928093989,
+     "expected_2F_unweighted": 78.73828011381195
+    }
+   },
+   "recoverable_5p8d_H1": "yes"
+  },
+  {
+   "name": "P15",
+   "f0_gw_Hz": 2991.0926,
+   "f1dot_gw_Hz_s": -1e-12,
+   "f2dot_gw_Hz_s2": 0.0,
+   "ref_time_gps": 930582085,
+   "ra_rad": 5.25,
+   "dec_rad": -0.25,
+   "h0": 8.660254037844385e-25,
+   "cosi": 6.123233995736766e-17,
+   "psi_rad": 1.0,
+   "phi0_gw_rad": 1.25,
+   "binary": null,
+   "h1_track_Hz": [
+    2991.3683239861834,
+    2991.3821064338526
+   ],
+   "band_bins_1800": null,
+   "gwosc4k_amplitude_gain": null,
+   "raw_strain_study": {
+    "ungated": {
+     "expected_2F": null,
+     "measured_2F": null,
+     "expected_2F_unweighted": null
+    },
+    "gated": {
+     "expected_2F": null,
+     "measured_2F": null,
+     "expected_2F_unweighted": null
+    }
+   },
+   "recoverable_5p8d_H1": null
+  },
+  {
+   "name": "P16",
+   "f0_gw_Hz": 234.567,
+   "f1dot_gw_Hz_s": 0.0,
+   "f2dot_gw_Hz_s2": 0.0,
+   "ref_time_gps": 1230336018,
+   "ra_rad": 0.3487022,
+   "dec_rad": -0.2729743,
+   "h0": 1.5862977544445357e-25,
+   "cosi": 0.7249584743960559,
+   "psi_rad": 4.084,
+   "phi0_gw_rad": 0.0,
+   "binary": {
+    "porb_s": 83941.2,
+    "asini_lts": 2.35,
+    "tp_ssb_gps": 1230336018.0,
+    "ecc": 0.0,
+    "argp_rad": 1.23456
+   },
+   "h1_track_Hz": [
+    234.5250222406563,
+    234.60961906796928
+   ],
+   "band_bins_1800": [
+    422041,
+    360
+   ],
+   "gwosc4k_amplitude_gain": 0.9977316485238713,
+   "raw_strain_study": {
+    "ungated": {
+     "expected_2F": 25.981583363689833,
+     "measured_2F": 32.061805115403835,
+     "expected_2F_unweighted": 7.7480132499722085
+    },
+    "gated": {
+     "expected_2F": 36.90569226269779,
+     "measured_2F": 46.241374977516045,
+     "expected_2F_unweighted": 22.09815818433823
+    }
+   },
+   "recoverable_5p8d_H1": "marginal"
+  },
+  {
+   "name": "P17",
+   "f0_gw_Hz": 890.123,
+   "f1dot_gw_Hz_s": 0.0,
+   "f2dot_gw_Hz_s2": 0.0,
+   "ref_time_gps": 1230336018,
+   "ra_rad": 1.9194985,
+   "dec_rad": -0.2729743,
+   "h0": 8.393684758058924e-26,
+   "cosi": 0.71958861621541,
+   "psi_rad": 4.084,
+   "phi0_gw_rad": 0.0,
+   "binary": {
+    "porb_s": 83941.2,
+    "asini_lts": 2.35,
+    "tp_ssb_gps": 1230379218.0,
+    "ecc": 0.0,
+    "argp_rad": 2.13456
+   },
+   "h1_track_Hz": [
+    889.8961031592463,
+    890.2118364699367
+   ],
+   "band_bins_1800": [
+    1601737,
+    720
+   ],
+   "gwosc4k_amplitude_gain": 0.9993479188048838,
+   "raw_strain_study": {
+    "ungated": {
+     "expected_2F": 6.686008210967213,
+     "measured_2F": 7.244696833970458,
+     "expected_2F_unweighted": 6.5238135325462485
+    },
+    "gated": {
+     "expected_2F": 6.82376136432035,
+     "measured_2F": 7.9051843982855114,
+     "expected_2F_unweighted": 6.76012546277509
+    }
+   },
+   "recoverable_5p8d_H1": "no"
+  }
+ ]
+}

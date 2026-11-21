@@ -1,0 +1,39 @@
+# Bands for the O3a H1 validation run: FMIN BAND (Hz), both multiples of 1/1800 Hz.
+# Hardware-injection bands (track centred, rustyprune's centred_fmin rule; see docs/cleaning_report.md)
+1390.885556 0.1   # P04  (= 2503594/1800)
+1991.230556 0.1   # P14  (= 3584215/1800)
+848.876667  0.1   # P01  (= 1527978/1800)
+145.4       0.1   # P06  (= 261720/1800)
+234.467222  0.2   # P16  binary (= 422041/1800)
+52.761111   0.1   # P05  (= 94970/1800)
+265.522222  0.1   # P00
+763.77      0.1   # P09
+26.282778   0.1   # P10
+1220.451667 0.1   # P07
+190.057778  0.1   # P08
+108.807222  0.1   # P03
+575.131111  0.1   # P02
+889.853889  0.4   # P17  binary
+31.377222   0.1   # P11
+37.756111   0.1   # P12
+# Default search band
+100.68 0.1
+# ISSUES C1: 1 Hz bands flooded by aliased < 10 Hz content in v1, and a control band
+56  1.0
+71  1.0
+519 1.0
+100 1.0
+# ISSUES C1: 0.1 Hz bands containing v1's fake lines (56.07, 71.93, 120.07, 135.93, 199.93, 519.93, 1016.07 Hz)
+56     0.1
+71.9   0.1
+120    0.1
+135.9  0.1
+199.9  0.1
+519.9  0.1
+1016   0.1
+# ISSUES C3: widths v1 could not produce (rustyprune accepts only k/10; these are for the channelizer test)
+100.6  0.15
+100.6  0.37
+100.6  0.55
+# ISSUES C6: low band where v1 left file-start spikes unflagged
+30     0.1
