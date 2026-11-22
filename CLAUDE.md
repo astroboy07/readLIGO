@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 Read `docs/README.md` first for project orientation, then
-`docs/project_context.md` for current status and conventions.
+`docs/project_context.md` (local only, not in git) for current status and conventions.
 Only go deeper into the specific docs below when the task requires it.
 
 ## Documentation map
@@ -9,7 +9,7 @@ Only go deeper into the specific docs below when the task requires it.
 | File | Read when... |
 |---|---|
 | `docs/README.md` | Always — start here |
-| `docs/project_context.md` | Always — current state, layout, conventions |
+| `docs/project_context.md` | Always — current state, layout, conventions (local only, not in git) |
 | `docs/cleaning_pipeline.md` | Working on the cleaning: how every step works, running it, validation, limits |
 | `docs/cleaning_report.md` | History of the v1 → v2 redesign and its first validation |
 | `docs/pipeline_architecture.md` | Changing how the stages connect, or the product format |

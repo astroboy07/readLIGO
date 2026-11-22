@@ -26,3 +26,6 @@ _work/
 # Not for the repository (ISSUES.md E10): copyrighted paper, local settings
 docs/gatestrain.pdf
 .claude/settings.local.json
+
+# Local working notes, kept off GitHub
+docs/project_context.md

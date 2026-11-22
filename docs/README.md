@@ -4,7 +4,6 @@
 |---|---|
 | [`cleaning_pipeline.md`](cleaning_pipeline.md) | Always. How the cleaning works today, how to run it (laptop, marvin), how it was validated, what the search must still do |
 | [`cleaning_report.md`](cleaning_report.md) | The v1 → v2 redesign: what was wrong in v1, the first v2 validation (2026-11-15) |
-| [`project_context.md`](project_context.md) | Current state, layout, conventions |
 | [`pipeline_architecture.md`](pipeline_architecture.md) | Changing how the stages connect, or the product format |
 | [`preprocessing.md`](preprocessing.md) | Only for the v1 chain (`process_band`), kept for comparison |
 | [`../ISSUES.md`](../ISSUES.md) | Status of every known issue |
